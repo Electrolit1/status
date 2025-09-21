@@ -1,30 +1,40 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Minecraft Logs</title>
-    <style>
-        body { font-family: Arial; background: #121212; color: #f0f0f0; padding: 20px; }
-        #logs { max-height: 90vh; overflow-y: scroll; border: 1px solid #333; padding: 10px; }
-        .error { color: #ff4c4c; }
-    </style>
+  <meta charset="UTF-8">
+  <title>Panel VoxCraft</title>
+  <style>
+    body { font-family: Arial; background: #121212; color: #fff; padding: 20px; }
+    .ok { color: #4cff77; }
+    .offline { color: #ff4c4c; }
+    .card { background: #1e1e1e; padding: 15px; margin-bottom: 20px; border-radius: 10px; }
+  </style>
 </head>
 <body>
-    <h1>Logs de Minecraft</h1>
-    <div id="logs"></div>
+  <h1>📊 Panel VoxCraft</h1>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-        const logsDiv = document.getElementById('logs');
+  <div class="card">
+    <h2>🌍 Estado del servidor</h2>
+    <p id="serverStatus">Cargando...</p>
+    <p id="players"></p>
+  </div>
 
-        socket.on('newLog', line => {
-            const p = document.createElement('p');
-            if(line.includes('ERROR') || line.includes('Exception')) p.classList.add('error');
-            p.textContent = line;
-            logsDiv.appendChild(p);
-            logsDiv.scrollTop = logsDiv.scrollHeight; // Auto-scroll
-        });
-    </script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const statusP = document.getElementById('serverStatus');
+    const playersP = document.getElementById('players');
+
+    socket.on('serverStatus', data => {
+      if(data.online) {
+        statusP.innerHTML = `✅ Online en <span class="ok">${data.ip}</span> | Versión: ${data.version}`;
+        playersP.innerHTML = `👥 Jugadores: ${data.onlinePlayers}/${data.maxPlayers}<br>` +
+                             (data.players.length ? `🔹 ${data.players.join(', ')}` : 'Nadie conectado');
+      } else {
+        statusP.innerHTML = `<span class="offline">❌ Servidor apagado o no accesible</span>`;
+        playersP.innerHTML = '';
+      }
+    });
+  </script>
 </body>
 </html>
