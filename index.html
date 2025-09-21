@@ -2,16 +2,18 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Panel VoxCraft</title>
+  <title>Panel NeoBox</title>
   <style>
     body { font-family: Arial; background: #121212; color: #fff; padding: 20px; }
     .ok { color: #4cff77; }
     .offline { color: #ff4c4c; }
     .card { background: #1e1e1e; padding: 15px; margin-bottom: 20px; border-radius: 10px; }
+    input, button { padding: 10px; margin-top: 10px; width: 100%; border-radius: 5px; border: none; }
+    button { background: #4cff77; color: #000; cursor: pointer; }
   </style>
 </head>
 <body>
-  <h1>📊 Panel VoxCraft</h1>
+  <h1>📊 Panel NeoBox</h1>
 
   <div class="card">
     <h2>🌍 Estado del servidor</h2>
@@ -19,22 +21,41 @@
     <p id="players"></p>
   </div>
 
+  <div class="card">
+    <h2>⌨️ Consola</h2>
+    <input id="commandInput" placeholder="Escribe un comando...">
+    <button onclick="sendCommand()">Enviar</button>
+    <pre id="consoleOutput"></pre>
+  </div>
+
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
-    const statusP = document.getElementById('serverStatus');
-    const playersP = document.getElementById('players');
 
-    socket.on('serverStatus', data => {
+    const statusP = document.getElementById("serverStatus");
+    const playersP = document.getElementById("players");
+    const output = document.getElementById("consoleOutput");
+
+    socket.on("serverStatus", (data) => {
       if(data.online) {
-        statusP.innerHTML = `✅ Online en <span class="ok">${data.ip}</span> | Versión: ${data.version}`;
+        statusP.innerHTML = `✅ Online | Versión: ${data.version} | MOTD: ${data.motd}`;
         playersP.innerHTML = `👥 Jugadores: ${data.onlinePlayers}/${data.maxPlayers}<br>` +
-                             (data.players.length ? `🔹 ${data.players.join(', ')}` : 'Nadie conectado');
+                             (data.players.length ? `🔹 ${data.players.map(p => p.name).join(", ")}` : "Nadie conectado");
       } else {
         statusP.innerHTML = `<span class="offline">❌ Servidor apagado o no accesible</span>`;
-        playersP.innerHTML = '';
+        playersP.innerHTML = "";
       }
     });
+
+    socket.on("commandResponse", (res) => {
+      output.textContent += res + "\n";
+    });
+
+    function sendCommand() {
+      const cmd = document.getElementById("commandInput").value;
+      socket.emit("sendCommand", cmd);
+      document.getElementById("commandInput").value = "";
+    }
   </script>
 </body>
 </html>
