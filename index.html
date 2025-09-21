@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Minecraft Logs</title>
+    <style>
+        body { font-family: Arial; background: #121212; color: #f0f0f0; padding: 20px; }
+        #logs { max-height: 90vh; overflow-y: scroll; border: 1px solid #333; padding: 10px; }
+        .error { color: #ff4c4c; }
+    </style>
+</head>
+<body>
+    <h1>Logs de Minecraft</h1>
+    <div id="logs"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const logsDiv = document.getElementById('logs');
+
+        socket.on('newLog', line => {
+            const p = document.createElement('p');
+            if(line.includes('ERROR') || line.includes('Exception')) p.classList.add('error');
+            p.textContent = line;
+            logsDiv.appendChild(p);
+            logsDiv.scrollTop = logsDiv.scrollHeight; // Auto-scroll
+        });
+    </script>
+</body>
+</html>
