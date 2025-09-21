@@ -1,9 +1,7 @@
-// server.js
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
-const fs = require('fs');
-const readline = require('readline');
+const Query = require('minecraft-query');
 
 const app = express();
 const server = http.createServer(app);
@@ -11,21 +9,27 @@ const io = socketIo(server);
 
 app.use(express.static(__dirname)); // Servir index.html
 
-const logPath = './logs/latest.log'; // Ruta del log de Minecraft
+const SERVER_IP = 'voxcraft.us';
+const SERVER_PORT = 19132;
 
-// Leer log en tiempo real
-const stream = readline.createInterface({
-    input: fs.createReadStream(logPath, { encoding: 'utf8' }),
-    terminal: false
-});
+// Cada 5 segundos consultar el estado del server
+setInterval(() => {
+    const q = new Query({ host: SERVER_IP, port: SERVER_PORT, timeout: 3000 });
 
-stream.on('line', (line) => {
-    io.emit('newLog', line); // Enviar línea al frontend
-});
+    q.connect().then(() => {
+        q.full_stat().then(stat => {
+            io.emit('serverStatus', {
+                online: true,
+                motd: stat.hostname,
+                players: stat.players,
+                onlinePlayers: stat.numplayers,
+                maxPlayers: stat.maxplayers,
+                version: stat.version,
+                ip: `${SERVER_IP}:${SERVER_PORT}`
+            });
+            q.close();
+        }).catch(() => io.emit('serverStatus', { online: false }));
+    }).catch(() => io.emit('serverStatus', { online: false }));
+}, 5000);
 
-// Socket.IO conexión
-io.on('connection', (socket) => {
-    console.log('Usuario conectado');
-});
-
-server.listen(3000, () => console.log('Web lista en http://localhost:3000'));
+server.listen(3000, () => console.log('Panel en http://localhost:3000'));
